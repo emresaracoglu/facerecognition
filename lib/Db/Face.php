@@ -45,6 +45,12 @@ use OCP\AppFramework\Db\Entity;
 class Face extends Entity implements JsonSerializable {
 
 	/**
+	 * Database type, needed to format dates
+	 * @var string
+	 */
+	private $databaseType = 'sqlite';
+
+	/**
 	 * Image from this face originated from.
 	 *
 	 * @var int
@@ -120,6 +126,10 @@ class Face extends Entity implements JsonSerializable {
 		return $face;
 	}
 
+	public function setDatabaseType(string $type) {
+		$this->databaseType = $type;
+	}
+
 	/**
 	 * Helper method, to normalize face sizes back to original dimensions, based on ratio
 	 *
@@ -160,7 +170,7 @@ class Face extends Entity implements JsonSerializable {
 			'top' => $this->top,
 			'bottom' => $this->bottom,
 			'descriptor' => $this->descriptor,
-			'creation_time' => $this->creationTime
+			'creation_time' => $this->getCreationTime(true)
 		];
 	}
 
@@ -173,9 +183,13 @@ class Face extends Entity implements JsonSerializable {
 		$this->markFieldUpdated('descriptor');
 	}
 
-	public function getCreationTime(): string {
-		// Deck app have special handling for MySQL here:
+	public function getCreationTime(bool $isoFormat = false): string {
+		// Same special handling for MySQL as in Deck app
 		// https://github.com/nextcloud/deck/blob/139b38ca1df0ff17792eb218cc8ba7e3b04b4e51/lib/Db/Card.php#L84
+		//
+		if (!$isoFormat && $this->databaseType === 'mysql') {
+			return $this->creationTime->format('Y-m-d H:i:s');
+		}
 		return $this->creationTime->format('c');
 	}
 
